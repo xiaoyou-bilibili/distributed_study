@@ -25,3 +25,8 @@
 - 30005-30007 aria2 rpc listen web
 - 30008-30010 nacos
 - 300011-30012 rocketmq
+- 30013 home-assistant
+- 30014-30015 jenkins
+- 30016 nextcloud
+- 30017 sftp
+- 30018-30019 git
