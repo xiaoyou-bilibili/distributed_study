@@ -30,3 +30,5 @@
 - 30016 nextcloud
 - 30017 sftp
 - 30018-30019 git
+- 30020 jellyfin
+- 30021-30022 hdfs-master
