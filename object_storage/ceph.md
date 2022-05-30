@@ -33,33 +33,48 @@ sudo docker network create --driver bridge --subnet 172.20.0.0/16 ceph-network
 # 拉取镜像
 sudo docker pull ceph/daemon:latest-nautilus
 # 搭建mon节点
-sudo docker run -d --name ceph-mon --network ceph-network --ip 172.20.0.10 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_IP=172.20.0.10 -e MON_NAME=ceph-mon -e CEPH_PUBLIC_NETWORK=172.20.0.0/16 -v /etc/ceph:/etc/ceph -v /var/lib/ceph:/var/lib/ceph/ -v /data/storage/ceph/log:/var/log/ceph/ ceph/daemon:latest-nautilus mon
+sudo docker run -d --name ceph-mon --network ceph-network --ip 172.20.0.10 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_IP=172.20.0.10 -e MON_NAME=ceph-mon -e CEPH_PUBLIC_NETWORK=172.20.0.0/16 -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/log:/var/log/ceph/ ceph/daemon:latest-nautilus mon
 # 生成一下鉴权信息
 sudo docker exec ceph-mon ceph auth get client.bootstrap-osd -o /var/lib/ceph/bootstrap-osd/ceph.keyring
 # 修改配置文件，用于兼容ext4（如果用虚拟磁盘可以不加）
-sudo vim /etc/ceph/ceph.conf
+sudo vim /data/storage/ceph/etc/ceph.conf
 # 加上下面两行
 osd max object name len = 256
 osd max object namespace len = 64
-# 下面我们搭建三个容器来模拟集群（把/var/lib/ceph/osd映射为自己挂载的硬盘）
-sudo docker run -d --privileged=true --name ceph-osd-1 --network ceph-network --ip 172.20.0.11 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10  -v /etc/ceph:/etc/ceph -v /var/lib/ceph:/var/lib/ceph/ -v /dev/osd1:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd
+# 下面我们搭建10个容器来模拟集群(自己可以可以随便搞几个集群)（把/var/lib/ceph/osd映射为自己挂载的硬盘）
+sudo docker run -d --privileged=true --name ceph-osd-1 --network ceph-network --ip 172.20.0.11 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10  -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd
 
-sudo docker run -d --privileged=true --name ceph-osd-2 --network ceph-network --ip 172.20.0.12 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /etc/ceph:/etc/ceph -v /var/lib/ceph:/var/lib/ceph/ -v /data/storage/ceph/osd2:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+sudo docker run -d --privileged=true --name ceph-osd-2 --network ceph-network --ip 172.20.0.12 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd2:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
 
-sudo docker run -d --privileged=true --name ceph-osd-3 --network ceph-network --ip 172.20.0.13 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /etc/ceph:/etc/ceph -v /var/lib/ceph:/var/lib/ceph/ -v /data/storage/ceph/osd3:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+sudo docker run -d --privileged=true --name ceph-osd-3 --network ceph-network --ip 172.20.0.13 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd3:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-4 --network ceph-network --ip 172.20.0.14 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd4:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-5 --network ceph-network --ip 172.20.0.15 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd5:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-6 --network ceph-network --ip 172.20.0.16 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd6:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-7 --network ceph-network --ip 172.20.0.17 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd7:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-8 --network ceph-network --ip 172.20.0.18 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd8:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-9 --network ceph-network --ip 172.20.0.19 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd9:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
+
+sudo docker run -d --privileged=true --name ceph-osd-10 --network ceph-network --ip 172.20.0.20 -e CLUSTER=ceph -e WEIGHT=1.0 -e MON_NAME=ceph-mon -e MON_IP=172.20.0.10 -e OSD_TYPE=directory -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/osd10:/var/lib/ceph/osd -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus osd_directory
 
 # 搭建mgr节点
-sudo docker run -d --privileged=true --name ceph-mgr --network ceph-network --ip 172.20.0.14 -e CLUSTER=ceph -p 7000:7000 --pid=container:ceph-mon -v /etc/ceph:/etc/ceph -v /var/lib/ceph:/var/lib/ceph/ ceph/daemon:latest-nautilus mgr
+sudo docker run -d --privileged=true --name ceph-mgr --network ceph-network --ip 172.20.0.50 -e CLUSTER=ceph -p 7000:7000 --pid=container:ceph-mon -v /data/storage/ceph/etc:/etc/ceph -v /data/storage/ceph/lib:/var/lib/ceph/ ceph/daemon:latest-nautilus mgr
 
 # 生成rgw秘钥
 sudo docker exec ceph-mon ceph auth get client.bootstrap-rgw -o /var/lib/ceph/bootstrap-rgw/ceph.keyring
 
 # 搭建rgw节点
-sudo docker run -d --privileged=true --name ceph-rgw --network ceph-network --ip 172.20.0.15 -e CLUSTER=ceph -e RGW_NAME=ceph-rgw -p 7480:7480 -v /var/lib/ceph:/var/lib/ceph/ -v /etc/ceph:/etc/ceph -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus rgw
+sudo docker run -d --privileged=true --name ceph-rgw --network ceph-network --ip 172.20.0.51 -e CLUSTER=ceph -e RGW_NAME=ceph-rgw -p 7480:7480 -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/etc:/etc/ceph -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus rgw
 
 # 查看ceph的运行状态
 sudo docker exec ceph-mon ceph -s
 ```
+
 
 ### 打开监控面板
 参考：https://dylanyang.top/post/2021/05/15/ceph-dashboard%E9%85%8D%E7%BD%AE/
@@ -90,25 +105,25 @@ radosgw-admin user create --uid=admin --display-name=admin --system
 复制里面的access和secret
 ![](../images/2022-05-29-16-17-15.png)
 
+FOT3ZGIO4MNTQVMQDHS0
+aywlGt9AmuBVw1VNsvQdN6COOfQAnIZy1XwfAKBJ
+
 ```bash
+# 把access和secret信息写入到我们的文件中
+vi access
+vi secret
 # 查看用户信息
 radosgw-admin user info --uid=admin
 
-# 自己先把这些access和secret信息写入到我们的文件中，设置控制面板的access和秘钥（-i后面自己新建一个文件）
-ceph dashboard set-rgw-api-access-key -i <file-containing-access-key>
-ceph dashboard set-rgw-api-secret-key -i <file-containing-secret-key>
+# 自己先把，设置控制面板的access和秘钥（-i后面自己新建一个文件）
+ceph dashboard set-rgw-api-access-key -i access
+ceph dashboard set-rgw-api-secret-key -i secret
 # 设置协议
 ceph dashboard set-rgw-api-scheme http
 # 设置用户
 ceph dashboard set-rgw-api-user-id admin
-# 最后重启一下mgr
+# 最后刷新一下就可以了
 ```
-
-### 修改OSD容量
-
-> 监控面板显示我的OSD容量只有100G
-
-
 
 ## 使用指南
 
@@ -146,18 +161,35 @@ Ratio压缩比例：数据块压缩之后的大小和原始数据大小的比例
 最大blob大小（Compression Max blob Size）：如果需要压缩的数据块大于该值，则会分成若干个数据块进行压缩。该值针对硬盘驱动器和固态硬盘可以设置不同大小。
 
 
-### 使用Wimbledon的存储池
+### 使用我们的存储池
 参考：http://www.yangguanjun.com/2017/05/08/rgw-user-config-datapool/
 
-这个服务用的是默认的存储池，我们可以修改一下，使用我们自己的存储池
+这个服务用的是默认的存储池，默认是保存3个副本，我们这里不需要这么多，我们可以修改一下，使用我们自己的存储池
 
 ```bash
-# 查看一下所有的
+# 查看一下存储池
 radosgw-admin zone placement list  --rgw-zone=default
-# 创建一个账号
-radosgw-admin user create  --uid='xiaoyou' --display-name='xiaoyou' --access-key='xiaoyou' --secret='xiaoyou'
+# 导出配置
+radosgw-admin zone get --rgw-zone=default > zone.info
+# 这里直接修改data_pool，改成我们自己的
+vi zone.info
+# 重新更新一下
+radosgw-admin zone set --rgw-zone=default < zone.info
 ```
 
+### 使用对象存储
+
+```bash
+# 我们添加一个用户
+radosgw-admin user create --uid="xiaoyou" --display-name="xiaoyou"
+# ZW051VO0D3092DJD6QDD
+# JbrFDp0SbEt0LwyCMQ5xAVYHloH85GzYSWdjOB8O
+# 如果忘记了可以通过下面的命令来查看
+radosgw-admin user info --uid xiaoyou
+```
+
+我们可以自己创建一个s3 browser来访问我们的对象存储仓库
+![](../images/2022-05-30-12-26-09.png)
 
 
 ## 参考
