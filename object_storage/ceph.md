@@ -188,9 +188,187 @@ radosgw-admin user create --uid="xiaoyou" --display-name="xiaoyou"
 radosgw-admin user info --uid xiaoyou
 ```
 
-我们可以自己创建一个s3 browser来访问我们的对象存储仓库
+我们可以自己使用s3 browser来访问我们的对象存储仓库
 ![](../images/2022-05-30-12-26-09.png)
 
+
+### 使用块存储
+
+> 快存储提供了一个连续的序列化空间，比如可以给虚拟机提供磁盘。
+
+参考：https://cloud.tencent.com/developer/article/1592961
+
+```bash
+# 下面我们使用命令来完成操作，这里只是在容器里面演示测试
+# 创建一个存储池，名字叫rbd
+ceph osd pool create rbd 64 64
+# 查看我们所有的存储池
+ceph osd lspools
+# 查看存储空间使用情况
+ceph df
+# 查看存储池PG和PGP的数量
+ceph osd pool get rbd pg_num
+ceph osd pool get rbd pgp_num
+# 修改存储池PG和PGP的数量
+ceph osd pool set rbd pg_num 128
+ceph osd pool set rbd pgp_num 128
+
+# 查看我们存储池副本大小
+ceph osd pool get rbd size
+# 修改存储池大小
+ceph osd pool set rbd size 2
+
+# 设置我们的存储池为rdb类型
+ceph osd pool application enable <poolnaame> rbd
+# 查看存储池类型
+ceph osd pool application get rbd
+
+# 下面我们来创建一个10G的块存储
+rbd create -p rbd --image ceph-rbd-demo.img --size 10G 
+# 查看所有的rbd镜像
+rbd -p rbd ls
+
+# 查看镜像的详细信息
+rbd -p rbd info ceph-rbd-demo.img
+
+# 关闭没用的feture
+rbd -p happylau --image ceph-rbd-demo.img feature disable deep-flatten
+rbd -p happylau --image ceph-rbd-demo.img feature disable fast-diff
+rbd -p happylau --image ceph-rbd-demo.img feature disable object-map
+rbd -p happylau --image ceph-rbd-demo.img feature disable exclusive-lock
+
+# 注意，直接在docker里面执行命令会报错，参考：https://github.com/ceph/ceph-container/issues/1449
+# 先在宿主机上执行
+sudo modprobe rbd
+# 然后我们进入到osd的docker里面再执行（docker需要特权模式）
+
+# 挂载我们的设备
+rbd map rbd/ceph-rbd-demo.img
+```
+
+此时我们的宿主机就已经挂上这块硬盘了，下面我们可以把它当成一块本地盘来使用
+![](../images/2022-05-31-09-00-17.png)
+
+
+### 文件存储
+
+> ceph提供了第三种存储方式就是文件存储，文件存储需要一个MDS节点
+https://cloud.tencent.com/developer/article/1708924
+
+```bash
+# 使用下面的命令来创建一个MDS节点（如果已经有文件系统了，可以CEPHFS_CREATE=0）
+sudo docker run -d --privileged=true --name ceph-mds --network ceph-network --ip 172.20.0.52 -e CLUSTER=ceph -e CEPHFS_CREATE=0 -e MDS_NAME=nfs -v /data/storage/ceph/lib:/var/lib/ceph/ -v /data/storage/ceph/etc:/etc/ceph -v /etc/localtime:/etc/localtime:ro ceph/daemon:latest-nautilus mds
+# 进入mds容器，创建一个用户
+ceph auth get-or-create client.cephfs mon 'allow r' mds 'allow r,allow rw path=/' osd 'allow rw pool=cephfs_data' -o ceph.client.cephfs.keyring
+# 查看我们创建的key，我们可以复制一下这个key
+cat ceph.client.cephfs.keyring
+# 或者通过下面这个命令来查看
+ceph auth get-key client.cephfs
+# 我的是
+AQBX3pVikImpGRAAiWxlQdx2pC1vIpWiH+SQVA==
+# docker好像不能挂上去。。目前这个功能用不到，以后再看一下
+mkdir /mnt/cephfs
+mount -t ceph 192.168.1.60:6789:/ /mnt/cephfs -o name=cephfs,secret=AQBX3pVikImpGRAAiWxlQdx2pC1vIpWiH+SQVA==
+# 查看挂载情况
+df -h /mnt/cephfs/
+```
+
+
+### SDk使用指南
+基于boto的
+```bash
+from distutils.command.build import build
+import boto
+import boto.s3.connection
+
+# 配置域名，秘钥等信息
+endpoint='192.168.1.60'
+access_key='ZW051VO0D3092DJD6QDD'
+secret_key='JbrFDp0SbEt0LwyCMQ5xAVYHloH85GzYSWdjOB8O'
+# 连接服务,ip和端口分开
+conn = boto.connect_s3(
+        aws_access_key_id = access_key,
+        aws_secret_access_key = secret_key,
+        host = endpoint,
+        is_secure=False,
+        calling_format = boto.s3.connection.OrdinaryCallingFormat(),
+        port=7480
+        )
+# 查看所有的bucket
+# for bucket in conn.get_all_buckets():
+#         print("{name}\t{created}".format(
+#                 name = bucket.name,
+#                 created = bucket.creation_date,
+#         ))
+
+# 手动创建一个bucket
+# conn.create_bucket('xiaoyou66')
+
+# 列出某个bucket的所有key
+bucket = conn.get_bucket('xiaoyou')
+# for key in bucket.list():
+#         print("{name}\t{size}\t{modified}".format(
+#                 name = key.name,
+#                 size = key.size,
+#                 modified = key.last_modified,
+#             ))
+
+# 删除bucket
+# conn.delete_bucket(conn.get_bucket('xiaoyou66'))
+
+# 新建一个object（文本形式）
+# key = bucket.new_key('hello.txt')
+# key.set_contents_from_string('hello,word')
+
+# 新建一个object（从文件中）
+key = bucket.new_key('hello.png')
+key.set_contents_from_filename('/home/xiaoyou/s3/01.png')
+
+# 修改object的权限
+# hello_key = bucket.get_key('hello.txt')
+# hello_key.set_canned_acl('public-read')
+# plans_key = bucket.get_key('secret_plans.txt')
+# plans_key.set_canned_acl('private')
+
+# 下载bucket并保存
+# key = bucket.get_key('heh/Python.pdf')
+# key.get_contents_to_filename('/home/xiaoyou/python.pdf')
+
+# 删除key
+# bucket.delete_key('heh/Python.pdf')
+
+# 生成一个分享的url
+# hello_key = bucket.get_key('hello.txt')
+# hello_url = hello_key.generate_url(0, query_auth=False, force_http=True)
+# print(hello_url)
+
+# 生成一个带过期时间的链接
+# plans_key = bucket.get_key('hello.txt')
+# plans_url = plans_key.generate_url(3600, query_auth=True, force_http=True)
+# print(plans_url)
+```
+
+基于boto3
+```bash
+from boto3.session import Session
+import boto3
+
+
+# 配置域名，秘钥等信息
+endpoint='http://192.168.1.60:7480'
+access_key='ZW051VO0D3092DJD6QDD'
+secret_key='JbrFDp0SbEt0LwyCMQ5xAVYHloH85GzYSWdjOB8O'
+
+
+#Client初始化
+session = Session(access_key, secret_key)
+s3_client = session.client('s3', endpoint_url=endpoint)
+#Client初始化结束
+#列出该用户拥有的桶
+print([bucket['Name'] for bucket in s3_client.list_buckets()['Buckets']])
+# 上传文件
+resp = s3_client.put_object(Bucket="xiaoyou", Key="a.png", Body=open("01.png", 'rb').read())
+```
 
 ## 参考
 - https://blog.csdn.net/cyq6239075/article/details/107429839
