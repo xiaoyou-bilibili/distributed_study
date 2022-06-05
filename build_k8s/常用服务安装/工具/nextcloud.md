@@ -1,46 +1,53 @@
-参考：https://github.com/jenkinsci/docker/blob/master/README.md
 
 ```yaml
-
 ---
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: jenkins
+  name: nextcloud
   namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
-    k8s.kuboard.cn/name: jenkins
+    k8s.kuboard.cn/name: nextcloud
   annotations:
-    k8s.kuboard.cn/displayName: 自动化部署
+    k8s.kuboard.cn/displayName: 个人云盘
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       k8s.kuboard.cn/layer: web
-      k8s.kuboard.cn/name: jenkins
+      k8s.kuboard.cn/name: nextcloud
   template:
     metadata:
       creationTimestamp: null
       labels:
         k8s.kuboard.cn/layer: web
-        k8s.kuboard.cn/name: jenkins
+        k8s.kuboard.cn/name: nextcloud
     spec:
       volumes:
-        - name: volume-eyf72
+        - name: volume-kramm
           persistentVolumeClaim:
             claimName: tool
+        - name: data1
+          nfs:
+            server: 192.168.1.60
+            path: /data/SD1
       containers:
-        - name: jenkins
-          image: 'registry.xiaoyou.com/jenkins/jenkins:lts-jdk11'
+        - name: nextcloud
+          image: registry.xiaoyou.com/nextcloud
+          ports:
+            - containerPort: 80
+              protocol: TCP
           resources: {}
           volumeMounts:
-            - name: volume-eyf72
-              mountPath: /var/jenkins_home
-              subPath: jenkins
+            - name: volume-kramm
+              mountPath: /var/www/html
+              subPath: nextcloud
+            - name: data1
+              mountPath: /data/SD1
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
@@ -58,21 +65,21 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: jellyfin
+  name: nextcloud
   namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
-    k8s.kuboard.cn/name: jellyfin
+    k8s.kuboard.cn/name: nextcloud
 spec:
   ports:
-    - name: ed5k6b
+    - name: wybatw
       protocol: TCP
-      port: 8096
-      targetPort: 8096
-      nodePort: 30020
+      port: 80
+      targetPort: 80
+      nodePort: 30016
   selector:
     k8s.kuboard.cn/layer: web
-    k8s.kuboard.cn/name: jellyfin
+    k8s.kuboard.cn/name: nextcloud
   type: NodePort
   sessionAffinity: None
   externalTrafficPolicy: Cluster
@@ -85,24 +92,24 @@ spec:
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: jenkins
+  name: nextcloud
   namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
-    k8s.kuboard.cn/name: jenkins
+    k8s.kuboard.cn/name: nextcloud
 spec:
   ingressClassName: app
   rules:
-    - host: jenkins.xiaoyou.com
+    - host: cloud.xiaoyou.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: jenkins
+                name: nextcloud
                 port:
-                  number: 8080
+                  number: 80
 
 
 ```
