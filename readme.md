@@ -5,3 +5,6 @@
 
 ## 对象存储调研
 [点击跳转](./object_storage/readme.md)
+
+## 搭建微服务
+- [自动化部署调研](./ci-cd/readme.md)
