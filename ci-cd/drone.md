@@ -52,6 +52,7 @@ sudo docker run --detach \
   --publish=3000:3000 \
   --restart=always \
   --name=runner \
+  --privileged=true \
   drone/drone-runner-docker:1
 # 查看一下日志信息
 sudo docker logs runner
@@ -99,3 +100,43 @@ trigger:
 
 ![](../images/2022-06-05-16-30-18.png)
 
+yaml文件使用可以参考：https://docs.drone.io/pipeline/docker/syntax/platform/
+
+## 自动推送到自己的私有仓库
+
+drone配置
+```yml
+kind: pipeline
+type: docker
+name: build
+steps:
+  - name: build # 构建阶段
+    image: golang:alpine
+    pull: if-not-exists # 镜像拉取策略
+    commands: # 下面这里是我们执行的命令。这里我们是使用go去编译项目
+      - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+  - name: push # 自动推送到私有仓库
+    image: plugins/docker
+    pull: if-not-exists # 镜像拉取策略
+    settings:
+      registry: registry.xiaoyou66.com # 私有仓库地址
+      repo: registry.xiaoyou66.com/xiaoyou/demo1 # 仓库全称
+      use_cache: true
+      username: admin # 设置私有仓库的账号密码
+      password: xiaoyou
+      tags: # 设置我们的标签
+        - latest
+        - 0.0.1
+trigger: # 这里设置使用master分支来触发
+  branch:
+  - master
+```
+
+Dockerfile配置
+```bash
+FROM alpine
+WORKDIR /app
+COPY app ./
+ENV TZ=Asia/Shanghai
+ENTRYPOINT ./app
+```
