@@ -7,64 +7,88 @@
 
 ## yaml文件
 ```bash
+
 ---
+kind: StatefulSet
 apiVersion: apps/v1
-kind: Deployment
 metadata:
-  annotations:
-    k8s.kuboard.cn/displayName: MySQL8.0
+  name: mysql-8-0
+  namespace: xiaoyou-database
   labels:
     k8s.kuboard.cn/layer: db
-    k8s.kuboard.cn/name: mysql
-  name: mysql
-  namespace: xiaoyou-database
-  resourceVersion: '414519'
+    k8s.kuboard.cn/name: mysql-8-0
+  annotations:
+    k8s.kuboard.cn/displayName: MySQL8.0
 spec:
-  progressDeadlineSeconds: 600
   replicas: 1
-  revisionHistoryLimit: 5
   selector:
     matchLabels:
       k8s.kuboard.cn/layer: db
-      k8s.kuboard.cn/name: mysql
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
+      k8s.kuboard.cn/name: mysql-8-0
   template:
     metadata:
       creationTimestamp: null
       labels:
         k8s.kuboard.cn/layer: db
-        k8s.kuboard.cn/name: mysql
+        k8s.kuboard.cn/name: mysql-8-0
     spec:
+      volumes:
+        - name: volume-dez7x
+          persistentVolumeClaim:
+            claimName: database
       containers:
-        - env:
+        - name: mysql
+          image: 'registry.xiaoyou66.com/mysql:8.0'
+          env:
             - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: passwd
-                  name: database-conf
-          image: 'registry.xiaoyou.com/mysql:8.0'
-          imagePullPolicy: Always
-          name: mysql
+              value: xiaoyou
           resources: {}
+          volumeMounts:
+            - name: volume-dez7x
+              mountPath: /var/lib/mysql
+              subPath: mysql8-0
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: /var/lib/mysql
-              name: volume-t8jzk
-              subPath: mysql8-0
-      dnsPolicy: ClusterFirst
+          imagePullPolicy: IfNotPresent
       restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
       terminationGracePeriodSeconds: 30
-      volumes:
-        - name: volume-t8jzk
-          persistentVolumeClaim:
-            claimName: database-storage
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  serviceName: mysql-8-0
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  revisionHistoryLimit: 10
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: mysql-8-0
+  namespace: xiaoyou-database
+  labels:
+    k8s.kuboard.cn/layer: db
+    k8s.kuboard.cn/name: mysql-8-0
+spec:
+  ports:
+    - name: rp5aam
+      protocol: TCP
+      port: 3306
+      targetPort: 3306
+      nodePort: 30000
+  selector:
+    k8s.kuboard.cn/layer: db
+    k8s.kuboard.cn/name: mysql-8-0
+  type: NodePort
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
 ```
 
 ### mysql新建用户

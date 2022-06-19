@@ -1,30 +1,22 @@
 ### yaml
 ```yaml
 ---
+kind: StatefulSet
 apiVersion: apps/v1
-kind: Deployment
 metadata:
-  annotations:
-    k8s.kuboard.cn/displayName: 私有git仓库
+  name: gitea
+  namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
     k8s.kuboard.cn/name: gitea
-  name: gitea
-  namespace: xiaoyou-tool
-  resourceVersion: '733789'
+  annotations:
+    k8s.kuboard.cn/displayName: 私有git服务
 spec:
-  progressDeadlineSeconds: 600
   replicas: 1
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
       k8s.kuboard.cn/layer: web
       k8s.kuboard.cn/name: gitea
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
       creationTimestamp: null
@@ -32,107 +24,81 @@ spec:
         k8s.kuboard.cn/layer: web
         k8s.kuboard.cn/name: gitea
     spec:
+      volumes:
+        - name: volume-3kkce
+          persistentVolumeClaim:
+            claimName: tool
       containers:
-        - image: registry.xiaoyou.com/gitea/gitea
-          imagePullPolicy: Always
-          name: gitea
+        - name: gitea
+          image: registry.xiaoyou66.com/gitea/gitea
           resources: {}
+          volumeMounts:
+            - name: volume-3kkce
+              mountPath: /data
+              subPath: gitea
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: /data
-              name: volume-fre7x
-              subPath: gitea
-      dnsPolicy: ClusterFirst
+          imagePullPolicy: IfNotPresent
       restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
       terminationGracePeriodSeconds: 30
-      volumes:
-        - name: volume-fre7x
-          persistentVolumeClaim:
-            claimName: tool-data
-status:
-  availableReplicas: 1
-  conditions:
-    - lastTransitionTime: '2022-05-22T12:01:54Z'
-      lastUpdateTime: '2022-05-22T12:01:57Z'
-      message: ReplicaSet "gitea-b87f47d" has successfully progressed.
-      reason: NewReplicaSetAvailable
-      status: 'True'
-      type: Progressing
-    - lastTransitionTime: '2022-05-22T12:21:52Z'
-      lastUpdateTime: '2022-05-22T12:21:52Z'
-      message: Deployment has minimum availability.
-      reason: MinimumReplicasAvailable
-      status: 'True'
-      type: Available
-  observedGeneration: 3
-  readyReplicas: 1
-  replicas: 1
-  updatedReplicas: 1
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  serviceName: gitea
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  revisionHistoryLimit: 10
 
 ---
-apiVersion: v1
 kind: Service
+apiVersion: v1
 metadata:
-  annotations: {}
+  name: gitea
+  namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
     k8s.kuboard.cn/name: gitea
-  name: gitea
-  namespace: xiaoyou-tool
-  resourceVersion: '729295'
 spec:
-  clusterIP: 10.96.91.88
-  clusterIPs:
-    - 10.96.91.88
-  internalTrafficPolicy: Cluster
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: SingleStack
   ports:
-    - name: ephnkk
-      port: 3000
+    - name: ebep8f
       protocol: TCP
+      port: 3000
       targetPort: 3000
   selector:
     k8s.kuboard.cn/layer: web
     k8s.kuboard.cn/name: gitea
-  sessionAffinity: None
   type: ClusterIP
-status:
-  loadBalancer: {}
+  sessionAffinity: None
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  internalTrafficPolicy: Cluster
 
 ---
-apiVersion: networking.k8s.io/v1
 kind: Ingress
+apiVersion: networking.k8s.io/v1
 metadata:
-  annotations: {}
+  name: gitea
+  namespace: xiaoyou-tool
   labels:
     k8s.kuboard.cn/layer: web
     k8s.kuboard.cn/name: gitea
-  name: gitea
-  namespace: xiaoyou-tool
-  resourceVersion: '729452'
 spec:
   ingressClassName: app
   rules:
     - host: gitea.xiaoyou.com
       http:
         paths:
-          - backend:
+          - path: /
+            pathType: Prefix
+            backend:
               service:
                 name: gitea
                 port:
                   number: 3000
-            path: /
-            pathType: Prefix
-status:
-  loadBalancer:
-    ingress:
-      - ip: 192.168.1.52
-
 ```
 
 ## SSH推送
