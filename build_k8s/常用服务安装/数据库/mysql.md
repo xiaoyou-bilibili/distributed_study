@@ -7,7 +7,6 @@
 
 ## yaml文件
 ```bash
-
 ---
 kind: StatefulSet
 apiVersion: apps/v1
