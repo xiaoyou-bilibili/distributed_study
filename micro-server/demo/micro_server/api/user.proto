@@ -1,0 +1,27 @@
+// 定义我们接口的版本
+syntax = "proto3";
+// 定义包名称
+package api;
+// 定义go安装包名称
+option go_package = "server/api;api";
+// 定义我们的服务
+service User {
+  // 这里定义一个rpc服务，可以获取用户信息
+  rpc getInfo (UserRequest) returns (UserInfo);
+}
+// 接口请求
+message UserRequest {
+  int32 id = 1;
+}
+
+// 自己定义一个枚举类型
+enum EnumSex {
+  MALE = 0;
+  FEMALE = 1;
+}
+
+message UserInfo {
+  string name = 1;
+  int32 age = 2;
+  EnumSex sex = 3;
+}
