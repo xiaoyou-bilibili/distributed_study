@@ -16,19 +16,3 @@
 - [消息队列](./%E4%B8%AD%E9%97%B4%E4%BB%B6/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97.md)
 - [配置中心](./%E4%B8%AD%E9%97%B4%E4%BB%B6/%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83.md)
 
-
-## 个人服务对外暴露端口
-- 30000 mysql
-- 30001 mongo
-- 30002 mysql5.6
-- 30003-30004 es
-- 30005-30007 aria2 rpc listen web
-- 30008-30010 nacos
-- 300011-30012 rocketmq
-- 30013 home-assistant
-- 30014-30015 jenkins
-- 30016 nextcloud
-- 30017 sftp
-- 30018-30019 git
-- 30020 jellyfin
-- 30021-30022 hdfs-master
