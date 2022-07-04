@@ -9,6 +9,7 @@
 ## 键值型数据库
 
 - [Redis](./redis.md)
+- [RocksDB 持久化存储](./rocks.md)
 
 ## 文档型数据库
 
