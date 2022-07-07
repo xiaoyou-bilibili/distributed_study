@@ -99,6 +99,8 @@ mysqladmin -u 用户名 -p 旧密码 password 新密码
 show databases;
 # 创建一个demo数据库
 create database demo;
+# 指定编码
+create database data default character set utf8mb4 collate utf8mb4_unicode_ci;
 # 删除demo数据库
 drop database demo;
 # 使用数据库

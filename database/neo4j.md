@@ -179,6 +179,17 @@ MATCH (a:Person {name:'Todd'})-[rel]-(b:Person) DELETE a,b,rel
 ```
 
 
+## 详细介绍
+
+参考：http://neo4j.com.cn/public/cypher/neo4j_cql_create_node.html
+
+```bash
+
+
+```
+
+
+
 ## GUI工具
 - [Neo4j Browser](https://github.com/neo4j/neo4j-browser)
 

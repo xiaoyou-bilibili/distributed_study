@@ -79,3 +79,7 @@ spec:
   ipFamilyPolicy: SingleStack
   internalTrafficPolicy: Cluster
 ```
+
+## 使用
+
+这个项目兼容redis，可以直接使用redis的SDK去操作
