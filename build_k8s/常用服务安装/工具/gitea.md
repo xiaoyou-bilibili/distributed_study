@@ -104,7 +104,26 @@ spec:
 ## SSH推送
 ```bash
 # 生成SSH私钥
-ssh-keygen -t ed25519 -C "xiaoyou2333@foxmail.com"
-# 显示pub后缀的内容
-cat /home/xiaoyou/.ssh/id_ed25519.pub 
+ssh-keygen -t rsa -C "xiaoyou2333@foxmail.com"
+# 显示pub后缀的内容,然后到仓库里面设置一下
+cat /home/xiaoyou/.ssh/id_rsa.pub
+git remote add origin ssh://git@192.168.1.40:32045/index/music-player.git
+git push -u origin master
+```
+
+自己去修改一下`app.ini`文件
+```conf
+[server]
+APP_DATA_PATH    = /data/gitea
+DOMAIN           = 192.168.1.40
+SSH_DOMAIN       = 192.168.1.40
+HTTP_PORT        = 3000
+ROOT_URL         = https://git.xiaoyou.host/
+DISABLE_SSH      = false
+SSH_PORT         = 32045
+SSH_LISTEN_PORT  = 22
+LFS_START_SERVER = true
+LFS_CONTENT_PATH = /data/git/lfs
+LFS_JWT_SECRET   = ajP-ErA4aHjM_cEp9ri98DO7iX_g2aSKEy6aeqiwx4I
+OFFLINE_MODE     = false
 ```
